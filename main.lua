@@ -1,4 +1,5 @@
 #include "constants.lua"
+#include "timeline.lua"
 
 G_DEV = true
 
@@ -11,6 +12,9 @@ STATES = {
 
     current_keyframe = 0
 }
+
+DEFAULT_ENVIRONMENT = {}
+DEFAULT_POSTPROCESSING = {}
 
 KEYFRAMES = {}
 
@@ -44,6 +48,29 @@ function tick(delta)
     end
 
     STATES.enabled = true
+
+    if InputPressed('m') then
+        STATES_TIMELINE.enabled = not STATES_TIMELINE.enabled
+
+        if STATES_TIMELINE.enabled then
+            DEFAULT_ENVIRONMENT["fogcolor"] = {GetEnvironmentProperty("fogcolor")}
+            DEFAULT_ENVIRONMENT["fogParams"] = {GetEnvironmentProperty("fogParams")}
+            DEFAULT_ENVIRONMENT["snowamount"] = {GetEnvironmentProperty("snowamount")}
+            DEFAULT_ENVIRONMENT["snowdir"] = {GetEnvironmentProperty("snowdir")}
+            DEFAULT_ENVIRONMENT["sunBrightness"] = {GetEnvironmentProperty("sunBrightness")}
+            DEFAULT_ENVIRONMENT["rain"] = {GetEnvironmentProperty("rain")}
+            DEFAULT_ENVIRONMENT["brightness"] = {GetEnvironmentProperty("brightness")}
+            DEFAULT_ENVIRONMENT["exposure"] = {GetEnvironmentProperty("exposure")}
+
+            DEFAULT_POSTPROCESSING["saturation"] = {GetPostProcessingProperty("saturation")}
+            DEFAULT_POSTPROCESSING["colorbalance"] = {GetPostProcessingProperty("colorbalance")}
+
+            timeline_init()
+        else
+            setEnvProps(DEFAULT_ENVIRONMENT)
+            setPostProcProps(DEFAULT_POSTPROCESSING)
+        end
+    end
 
     if InputDown('t') and #KEYFRAMES > 0 then
         SetBool("game.input.locktool", true)
@@ -120,6 +147,10 @@ function tick(delta)
                 frame.init = false
             end
         end
+    end
+
+    if STATES_TIMELINE.enabled then
+        timeline_tick()
     end
 
     if not STATES.playing then return end
@@ -216,6 +247,10 @@ function draw()
         UiText(STATES.set_keyframe_duration, true)
         UiText(ENUM_INTERP_TYPE[STATES.set_keyframe_interp], true)
     UiPop()
+
+    if STATES_TIMELINE.enabled then
+        timeline_draw()
+    end
 end
 
 -- #endregion Main
